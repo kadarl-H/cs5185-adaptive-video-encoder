@@ -1,26 +1,28 @@
-# 数据集与产物
-data/
+# dataset and outputs
+data/*
+!data/README.md
 out/
 reports/frames/
 reports/*.mp4
 
-# Python
+# python
 .venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-# FFmpeg passlog
+# ffmpeg passlogs
 *.passlog*
 x264_2pass.log*
 *.mbtree
-*.log
 
-# 系统 / 编辑�?.DS_Store
+# os / editors
+.DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# 课程材料（版权原因不入库�?*.pdf
+# course materials (not redistributed)
+*.pdf
 *.pptx
 *.zip
