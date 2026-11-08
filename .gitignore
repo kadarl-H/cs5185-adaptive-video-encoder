@@ -16,13 +16,11 @@ x264_2pass.log*
 *.mbtree
 *.log
 
-# 系统 / 编辑器
-.DS_Store
+# 系统 / 编辑�?.DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# 课程材料（版权原因不入库）
-*.pdf
+# 课程材料（版权原因不入库�?*.pdf
 *.pptx
 *.zip
