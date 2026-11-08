@@ -1,0 +1,28 @@
+# 数据集与产物
+data/
+out/
+reports/frames/
+reports/*.mp4
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# FFmpeg passlog
+*.passlog*
+x264_2pass.log*
+*.mbtree
+*.log
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 课程材料（版权原因不入库）
+*.pdf
+*.pptx
+*.zip
