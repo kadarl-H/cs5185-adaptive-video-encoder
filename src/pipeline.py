@@ -47,43 +47,78 @@ def append_result(path: Path, row: dict) -> None:
         writer.writerow(row)
 
 
+def _evaluate(video: Path, output: str) -> dict:
+    try:
+        return evaluate.compare(video, Path(output))
+    except Exception as exc:  # noqa: BLE001
+        print(f"[warn] 评测失败：{exc}")
+        return {}
+
+
+def _psnr(metrics: dict) -> float:
+    try:
+        return float(metrics.get("psnr_y_db"))
+    except (TypeError, ValueError):
+        return float("-inf")
+
+
 def run_one(video: Path, ratio: float, attempts: int, do_eval: bool,
             baseline: bool = False) -> dict:
     info = probe.describe(video)
     tag = f"{int(round(ratio * 100))}%"
+    target = int(info[f"target_bytes_{tag}"])
 
     if baseline:
         mode = "baseline"
-        plan = decision.baseline_plan(ratio)
+        plans = [decision.baseline_plan(ratio)]
+        out_root = config.OUT_DIR / video.stem / f"baseline_{tag}pct"
+        per_attempt = attempts
     else:
         mode = "adaptive"
         try:
             feat = features_for(video)
         except Exception as exc:  # noqa: BLE001 - features are optional for a first run
-            print(f"[warn] 特征提取失败（{exc}），使用默认参数。")
+            print(f"[warn] 特征提取失败（{exc}），只用通用候选。")
             feat = {"diff_mean": 0.0, "edge_mean": 0.0}
-        plan = decision.choose(feat, ratio)
-
-    target = int(info[f"target_bytes_{tag}"])
-    out_dir = config.OUT_DIR / video.stem / (f"baseline_{tag}pct" if baseline else f"{tag}pct")
+        plans = decision.adaptive_candidates(feat, ratio)
+        out_root = config.OUT_DIR / video.stem / f"{tag}pct"
+        per_attempt = min(attempts, 2)
 
     start = time.perf_counter()
-    best, logs = encode.encode_to_budget(
-        video=video,
-        ratio=ratio,
-        target_bytes=target,
-        duration_s=float(info["duration_s"]),
-        out_dir=out_dir,
-        extra_args=decision.ffmpeg_args(plan),
-        max_attempts=attempts,
-    )
+    best = None
+    best_metrics: dict = {}
+    best_plan = plans[0]
+    best_in_budget = False
+    logs: list[dict] = []
 
-    metrics = {}
-    if best and do_eval:
-        try:
-            metrics = evaluate.compare(video, Path(best["output"]))
-        except Exception as exc:  # noqa: BLE001
-            print(f"[warn] 评测失败：{exc}")
+    for plan in plans:
+        out_dir = out_root if baseline else out_root / plan["name"]
+        candidate_best, candidate_logs = encode.encode_to_budget(
+            video=video,
+            ratio=ratio,
+            target_bytes=target,
+            duration_s=float(info["duration_s"]),
+            out_dir=out_dir,
+            extra_args=decision.ffmpeg_args(plan),
+            max_attempts=per_attempt,
+        )
+        for item in candidate_logs:
+            item["candidate"] = plan["name"]
+        logs.extend(candidate_logs)
+        if not candidate_best:
+            continue
+
+        metrics = _evaluate(video, candidate_best["output"]) if do_eval else {}
+        in_budget = abs(float(candidate_best.get("rel_error", 1.0))) <= config.SIZE_TOLERANCE
+        if best is None:
+            best, best_metrics, best_plan = candidate_best, metrics, plan
+            best_in_budget = in_budget
+        elif in_budget or not best_in_budget:
+            if _psnr(metrics) > _psnr(best_metrics) or (in_budget and not best_in_budget):
+                best, best_metrics, best_plan = candidate_best, metrics, plan
+                best_in_budget = in_budget
+        if baseline:
+            break
 
     elapsed = time.perf_counter() - start
     row = {
@@ -97,15 +132,17 @@ def run_one(video: Path, ratio: float, attempts: int, do_eval: bool,
         "rel_error": best["rel_error"] if best else "",
         "attempts": len(logs),
         "decode_ok": best["decode_ok"] if best else False,
-        "psnr_y_db": metrics.get("psnr_y_db", ""),
-        "ms_ssim": metrics.get("ms_ssim", ""),
+        "psnr_y_db": best_metrics.get("psnr_y_db", ""),
+        "ms_ssim": best_metrics.get("ms_ssim", ""),
         "encode_time_s": round(sum(x.get("encode_time_s", 0) for x in logs), 2),
         "total_time_s": round(elapsed, 2),
-        "preset": plan["preset"],
-        "x264_params": json.dumps(plan["x264_params"], separators=(",", ":")),
+        "preset": best_plan["preset"],
+        "x264_params": json.dumps(best_plan["x264_params"], separators=(",", ":")),
         "output": best["output"] if best else "",
-        "reason": " | ".join(plan["reason"]),
+        "reason": " | ".join(best_plan["reason"]),
     }
+    if not baseline:
+        row["candidate"] = best_plan["name"]
 
     suffix = "baseline" if baseline else "adaptive"
     log_path = config.LOG_DIR / f"{video.stem}_{tag}_{suffix}_attempts.jsonl"

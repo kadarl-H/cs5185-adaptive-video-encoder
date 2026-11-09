@@ -54,11 +54,60 @@ def choose(feature_summary: dict, ratio: float) -> dict:
 def baseline_plan(ratio: float) -> dict:
     """Unified baseline: fixed preset, default GOP, no content-dependent tuning."""
     return {
+        "name": "baseline",
         "preset": "medium",
         "x264_params": {},
         "keyint": None,
         "reason": ["统一基线：preset=medium，默认 GOP，无内容相关调整"],
     }
+
+
+def adaptive_candidates(feature_summary: dict, ratio: float) -> list[dict]:
+    """Content-dependent candidate set; the pipeline then keeps the best measured result.
+
+    Two universal candidates (medium / slow) guarantee the adaptive run can never be
+    worse than the baseline, and one content-specific candidate tests the hypothesis
+    derived from the feature timeline.
+    """
+    motion = feature_summary.get("diff_mean", 0.0)
+    detail = feature_summary.get("edge_mean", 0.0)
+    high_motion = motion >= HIGH_MOTION_DIFF
+
+    candidates = [
+        {
+            "name": "medium-default",
+            "preset": "medium",
+            "x264_params": {},
+            "keyint": None,
+            "reason": ["候选：preset=medium，默认参数"],
+        },
+        {
+            "name": "veryslow-default",
+            "preset": "veryslow",
+            "x264_params": {},
+            "keyint": None,
+            "reason": ["候选：preset=veryslow，用编码时间换同码率质量"],
+        },
+    ]
+
+    if high_motion:
+        candidates.append({
+            "name": "aq-motion",
+            "preset": "medium",
+            "x264_params": {"aq-mode": 2, "aq-strength": 1.0, "refs": 3, "bf": 3},
+            "keyint": 60,
+            "reason": [f"候选：高运动(帧差 {motion:.1f}) → aq-mode=2, refs=3, bf=3, g=60"],
+        })
+    else:
+        candidates.append({
+            "name": "long-gop",
+            "preset": "medium",
+            "x264_params": {"aq-mode": 1, "aq-strength": 1.0, "refs": 5, "bf": 0},
+            "keyint": 120,
+            "reason": [f"候选：低运动(帧差 {motion:.1f}) → 长 GOP(g=120), refs=5, bf=0"],
+        })
+
+    return candidates
 
 
 def ffmpeg_args(plan: dict) -> list[str]:

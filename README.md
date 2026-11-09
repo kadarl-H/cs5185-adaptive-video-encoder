@@ -77,6 +77,33 @@ metadata ──► 预算计算 ──► 内容特征 ──► 参数决策 �
 > 实现备注：5 秒短片段上纯 ABR 两遍会明显超出目标体积（实测可达 +40%~+50%），
 > `encode.py` 因此固定加 `-maxrate <目标码率> -bufsize <2×目标码率>`，把实际大小压回 ±3% 内。
 
+## 当前结果（Week 1）
+
+统一基线（6 个开发视频 × 5%/2%，共 12 次）：
+
+- 12/12 落在 ±3% 内，平均绝对误差 **1.76%**，最大 2.91%，解码校验 12/12
+- 平均 PSNR-Y：5% 档 **39.04 dB**，2% 档 **37.58 dB**
+- 明细：[logs/baseline.csv](logs/baseline.csv)，汇总：[reports/baseline_summary.md](reports/baseline_summary.md)
+
+自适应（候选搜索）对比同一基线：
+
+- 8/12 胜出，平均 ΔPSNR **+0.03 dB**，编码耗时约为基线的 5 倍
+- 明细：[reports/adaptive_vs_baseline.md](reports/adaptive_vs_baseline.md)
+
+保留测试集（05/06/09/10 × 两档）：8/8 达标；`09_Parkrun` 最难（5%→2% 掉约 3.6 dB）。
+
+关键工程发现：5 秒短片段上纯 ABR 两遍会超预算 40%–50%，必须加 VBV（`-maxrate`/`-bufsize`）。
+
+报告与幻灯片草稿：[report/CS5185_Project_Report.docx](report/CS5185_Project_Report.docx)、
+[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。
+
+```powershell
+python -m scripts.summarize       # 基线表 + PSNR 图
+python -m scripts.compare         # 自适应 vs 基线
+python -m scripts.export_frames   # 代表帧对比（reports/frames/，不入库）
+python scripts/make_report.py     # 生成 docx/pptx（需 python-docx / python-pptx）
+```
+
 ## 数据划分
 
 | 用途 | 视频 |
