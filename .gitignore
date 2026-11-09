@@ -26,3 +26,5 @@ Thumbs.db
 *.pdf
 *.pptx
 *.zip
+tools/
+.tmp/
