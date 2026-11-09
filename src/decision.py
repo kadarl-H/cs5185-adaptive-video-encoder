@@ -51,9 +51,21 @@ def choose(feature_summary: dict, ratio: float) -> dict:
     return plan
 
 
+def baseline_plan(ratio: float) -> dict:
+    """Unified baseline: fixed preset, default GOP, no content-dependent tuning."""
+    return {
+        "preset": "medium",
+        "x264_params": {},
+        "keyint": None,
+        "reason": ["统一基线：preset=medium，默认 GOP，无内容相关调整"],
+    }
+
+
 def ffmpeg_args(plan: dict) -> list[str]:
     """Translate a plan into extra FFmpeg arguments."""
-    args = ["-preset", plan["preset"], "-g", str(plan["keyint"])]
+    args = ["-preset", plan["preset"]]
+    if plan.get("keyint"):
+        args += ["-g", str(plan["keyint"])]
     params = plan.get("x264_params", {})
     if params:
         joined = ":".join(f"{k}={v}" for k, v in params.items())

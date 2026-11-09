@@ -31,6 +31,12 @@ python -m src.pipeline --video data/CS5185_Project_Video_Dataset/01_FourPeople.m
 
 # 6) 全部开发集 × 两档
 python -m src.pipeline --split dev --ratios 0.05 0.02
+
+# 7) 统一基线（固定 preset，不做内容自适应）
+python -m src.pipeline --split dev --ratios 0.05 0.02 --baseline
+
+# 8) 汇总成表格与图
+python -m scripts.summarize
 ```
 
 ## 目录结构
@@ -67,6 +73,9 @@ metadata ──► 预算计算 ──► 内容特征 ──► 参数决策 �
 - 最多 3 次尝试；**保留可用候选**，后一次失败不能覆盖前一次
 - 用十进制 MB / kbps；不要四舍五入到 MB
 - 时间统计从读元数据开始，到评测结束（含两次 pass 与重试）
+
+> 实现备注：5 秒短片段上纯 ABR 两遍会明显超出目标体积（实测可达 +40%~+50%），
+> `encode.py` 因此固定加 `-maxrate <目标码率> -bufsize <2×目标码率>`，把实际大小压回 ±3% 内。
 
 ## 数据划分
 

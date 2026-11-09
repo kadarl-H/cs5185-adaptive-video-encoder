@@ -36,6 +36,9 @@ def two_pass(
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
         "-b:v", f"{kbps}k",
+        # 短片段上纯 ABR 两遍会明显超预算，VBV 上限把实际码率压回目标
+        "-maxrate", f"{kbps}k",
+        "-bufsize", f"{kbps * 2}k",
         *extra_args,
         "-passlogfile", str(job_prefix),
     ]

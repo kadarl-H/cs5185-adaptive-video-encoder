@@ -1,0 +1,1 @@
+{"attempt": 0, "kbps": 6458, "output": "C:\\Users\\54028\\Documents\\deepseek-harness\\default-workspace\\cs5185-adaptive-video-encoder\\out\\06_ShakeNDry\\5%pct\\06_ShakeNDry_5pct_a0.mp4", "actual_bytes": 2034400, "actual_kbps": 6510.1, "rel_error": 0.012, "decode_ok": true, "encode_time_s": 1.4, "status": "ok"}

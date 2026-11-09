@@ -1,0 +1,1 @@
+{"attempt": 0, "kbps": 3117, "output": "C:\\Users\\54028\\Documents\\deepseek-harness\\default-workspace\\cs5185-adaptive-video-encoder\\out\\08_Shields\\baseline_2%pct\\08_Shields_2pct_a0.mp4", "actual_bytes": 1966955, "actual_kbps": 3147.1, "rel_error": 0.0106, "decode_ok": true, "encode_time_s": 2.13, "status": "ok"}

@@ -38,8 +38,7 @@ def features_for(video: Path) -> dict:
     return features.summary(rows)
 
 
-def append_result(row: dict) -> None:
-    path = config.LOG_DIR / "results.csv"
+def append_result(path: Path, row: dict) -> None:
     exists = path.exists()
     with path.open("a", newline="", encoding="utf-8-sig") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(row.keys()))
@@ -48,18 +47,25 @@ def append_result(row: dict) -> None:
         writer.writerow(row)
 
 
-def run_one(video: Path, ratio: float, attempts: int, do_eval: bool) -> dict:
+def run_one(video: Path, ratio: float, attempts: int, do_eval: bool,
+            baseline: bool = False) -> dict:
     info = probe.describe(video)
     tag = f"{int(round(ratio * 100))}%"
 
-    try:
-        feat = features_for(video)
-    except Exception as exc:  # noqa: BLE001 - features are optional for a first run
-        print(f"[warn] 特征提取失败（{exc}），使用默认参数。")
-        feat = {"diff_mean": 0.0, "edge_mean": 0.0}
+    if baseline:
+        mode = "baseline"
+        plan = decision.baseline_plan(ratio)
+    else:
+        mode = "adaptive"
+        try:
+            feat = features_for(video)
+        except Exception as exc:  # noqa: BLE001 - features are optional for a first run
+            print(f"[warn] 特征提取失败（{exc}），使用默认参数。")
+            feat = {"diff_mean": 0.0, "edge_mean": 0.0}
+        plan = decision.choose(feat, ratio)
 
-    plan = decision.choose(feat, ratio)
     target = int(info[f"target_bytes_{tag}"])
+    out_dir = config.OUT_DIR / video.stem / (f"baseline_{tag}pct" if baseline else f"{tag}pct")
 
     start = time.perf_counter()
     best, logs = encode.encode_to_budget(
@@ -67,7 +73,7 @@ def run_one(video: Path, ratio: float, attempts: int, do_eval: bool) -> dict:
         ratio=ratio,
         target_bytes=target,
         duration_s=float(info["duration_s"]),
-        out_dir=config.OUT_DIR / video.stem / f"{tag}pct",
+        out_dir=out_dir,
         extra_args=decision.ffmpeg_args(plan),
         max_attempts=attempts,
     )
@@ -81,6 +87,7 @@ def run_one(video: Path, ratio: float, attempts: int, do_eval: bool) -> dict:
 
     elapsed = time.perf_counter() - start
     row = {
+        "mode": mode,
         "video_id": info["video_id"],
         "ratio": tag,
         "target_bytes": target,
@@ -100,12 +107,13 @@ def run_one(video: Path, ratio: float, attempts: int, do_eval: bool) -> dict:
         "reason": " | ".join(plan["reason"]),
     }
 
-    log_path = config.LOG_DIR / f"{video.stem}_{tag}_attempts.jsonl"
+    suffix = "baseline" if baseline else "adaptive"
+    log_path = config.LOG_DIR / f"{video.stem}_{tag}_{suffix}_attempts.jsonl"
     log_path.write_text(
         "\n".join(json.dumps(x, ensure_ascii=False) for x in logs) + "\n",
         encoding="utf-8",
     )
-    append_result(row)
+    append_result(config.LOG_DIR / ("baseline.csv" if baseline else "results.csv"), row)
     print(json.dumps(row, ensure_ascii=False, indent=2))
     return row
 
@@ -118,6 +126,8 @@ def main() -> None:
     parser.add_argument("--ratio", type=float, default=None)
     parser.add_argument("--attempts", type=int, default=config.MAX_ATTEMPTS)
     parser.add_argument("--no-eval", action="store_true")
+    parser.add_argument("--baseline", action="store_true",
+                        help="跑统一基线（固定 preset，不做内容自适应）")
     args = parser.parse_args()
 
     config.ensure_dirs()
@@ -129,8 +139,9 @@ def main() -> None:
 
     for video in videos:
         for ratio in ratios:
-            print(f"\n=== {video.name} @ {ratio:.0%} ===")
-            run_one(video, ratio, args.attempts, not args.no_eval)
+            print(f"\n=== {video.name} @ {ratio:.0%} "
+                  f"({'baseline' if args.baseline else 'adaptive'}) ===")
+            run_one(video, ratio, args.attempts, not args.no_eval, args.baseline)
 
 
 if __name__ == "__main__":
