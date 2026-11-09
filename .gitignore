@@ -28,3 +28,6 @@ Thumbs.db
 *.zip
 tools/
 .tmp/
+
+# keep our own slides
+!report/*.pptx
