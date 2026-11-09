@@ -1,0 +1,2 @@
+﻿video_id,ratio,target_bytes,target_kbps,actual_bytes,actual_kbps,rel_error,attempts,decode_ok,psnr_y_db,ms_ssim,encode_time_s,total_time_s,preset,x264_params,output,reason
+06_ShakeNDry,5%,2059164,6457.5,2020377,6465.2,0.0188,2,True,38.74,0.99542,2.21,4.05,medium,"{""refs"":5,""bf"":0,""aq-mode"":1,""aq-strength"":1.0}",C:\Users\54028\Documents\deepseek-harness\default-workspace\cs5185-adaptive-video-encoder\out\06_ShakeNDry\5%pct\06_ShakeNDry_5pct_a1.mp4,"低运动(帧差 4.9) → 长 GOP(g=120), refs=5, bf=0 | 高细节(边缘 0.49) → 保留 aq-strength=1.0"

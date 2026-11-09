@@ -1,4 +1,7 @@
 """Shared paths and constants."""
+from __future__ import annotations
+
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,3 +30,29 @@ DEFAULT_PRESET = "medium"
 def ensure_dirs() -> None:
     for d in (OUT_DIR, LOG_DIR, REPORT_DIR):
         d.mkdir(parents=True, exist_ok=True)
+
+
+def ffmpeg_bin_dir() -> Path | None:
+    """Locate a bundled FFmpeg build (tools/ffmpeg/.../bin) if one exists."""
+    cache = ROOT / "tools" / "FFMPEG_BIN.txt"
+    if cache.exists():
+        candidate = Path(cache.read_text(encoding="utf-8").strip())
+        if (candidate / "ffmpeg.exe").exists() or (candidate / "ffmpeg").exists():
+            return candidate
+    exe_name = "ffmpeg.exe" if os.name == "nt" else "ffmpeg"
+    for exe in (ROOT / "tools").rglob(exe_name):
+        return exe.parent
+    return None
+
+
+def ensure_ffmpeg_on_path() -> None:
+    """Make a bundled FFmpeg visible to subprocesses and shutil.which()."""
+    bin_dir = ffmpeg_bin_dir()
+    if bin_dir is None:
+        return
+    path = os.environ.get("PATH", "")
+    if str(bin_dir) not in path.split(os.pathsep):
+        os.environ["PATH"] = str(bin_dir) + os.pathsep + path
+
+
+ensure_ffmpeg_on_path()
