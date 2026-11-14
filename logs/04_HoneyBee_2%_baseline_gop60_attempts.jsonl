@@ -1,0 +1,1 @@
+{"attempt": 0, "kbps": 2276, "output": "C:\\Users\\54028\\Documents\\deepseek-harness\\default-workspace\\cs5185-adaptive-video-encoder\\out\\04_HoneyBee\\baseline_gop60_2%pct\\04_HoneyBee_2pct_a0.mp4", "actual_bytes": 1464043, "actual_kbps": 2342.5, "rel_error": 0.0086, "decode_ok": true, "encode_time_s": 1.89, "status": "ok", "candidate": "baseline"}

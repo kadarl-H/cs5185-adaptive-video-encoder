@@ -1,0 +1,13 @@
+﻿video,nn_drift,nn_spread,nn_entropy,nn_top1,nn_top1_share
+01_FourPeople,0.11514,0.01011,nan,dam,0.38
+02_Beauty,0.10536,0.01141,nan,school bus,0.38
+03_Bosphorus,0.10232,0.00982,nan,perfume,0.62
+04_HoneyBee,0.02145,0.0045,nan,laptop,0.75
+05_Jockey,0.34283,0.01858,nan,fountain,0.25
+06_ShakeNDry,0.26681,0.01721,nan,moving van,0.12
+07_Mobcal,0.18307,0.01638,nan,laptop,0.25
+08_Shields,0.14132,0.01216,nan,green snake,0.62
+09_Parkrun,0.07676,0.009,nan,leatherback turtle,0.88
+10_Stockholm,0.07293,0.00948,nan,pickelhaube,0.38
+11_Sintel,0.5227,0.021,nan,mousetrap,0.25
+12_ControlledBurn,0.25337,0.01797,nan,radio telescope,0.25

@@ -77,31 +77,68 @@ metadata ──► 预算计算 ──► 内容特征 ──► 参数决策 �
 > 实现备注：5 秒短片段上纯 ABR 两遍会明显超出目标体积（实测可达 +40%~+50%），
 > `encode.py` 因此固定加 `-maxrate <目标码率> -bufsize <2×目标码率>`，把实际大小压回 ±3% 内。
 
-## 当前结果（Week 1）
+## 当前结果
 
-统一基线（6 个开发视频 × 5%/2%，共 12 次）：
+统一基线（开发集 6 视频 × 5%/2%，共 12 次）：
 
-- 12/12 落在 ±3% 内，平均绝对误差 **1.76%**，最大 2.91%，解码校验 12/12
+- 12/12 落在 ±3% 内，平均绝对误差 **1.76%**，解码校验 12/12
 - 平均 PSNR-Y：5% 档 **39.04 dB**，2% 档 **37.58 dB**
-- 明细：[logs/baseline.csv](logs/baseline.csv)，汇总：[reports/baseline_summary.md](reports/baseline_summary.md)
+- 明细：[logs/baseline.csv](logs/baseline.csv)
 
 自适应（候选搜索）对比同一基线：
 
-- 8/12 胜出，平均 ΔPSNR **+0.03 dB**，编码耗时约为基线的 5 倍
+- **8/12 胜出，平均 ΔPSNR +0.026 dB**；编码耗时约为基线的 5 倍
 - 明细：[reports/adaptive_vs_baseline.md](reports/adaptive_vs_baseline.md)
 
-保留测试集（05/06/09/10 × 两档）：8/8 达标；`09_Parkrun` 最难（5%→2% 掉约 3.6 dB）。
+保留测试集（05/06/09/10 × 两档，已补跑基线）：
 
-关键工程发现：5 秒短片段上纯 ABR 两遍会超预算 40%–50%，必须加 VBV（`-maxrate`/`-bufsize`）。
+- 自适应 **7/8 胜出，平均 +0.042 dB**；唯一退步是 `10_Stockholm @5%`（−0.159 dB）
+- `09_Parkrun` 仍最难（5%→2% 掉约 3.6 dB）
 
-报告与幻灯片草稿：[report/CS5185_Project_Report.docx](report/CS5185_Project_Report.docx)、
-[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。
+基线 GOP 敏感性（同一流水线，只换基线 GOP）：
+
+| 基线 | 平均 PSNR | 自适应相对它 |
+|---|---:|---:|
+| medium / 默认 GOP 250 / AQ1 | 38.94 dB | +0.026 dB，8/12 |
+| medium / GOP 60 / AQ1 | 38.81 dB | +0.161 dB，12/12 |
+
+GOP60 在 5 秒片段上比默认 GOP 低 0.135 dB（多出约 2 个 I 帧），所以“相对 GOP60 的增益更大”主要来自基线变弱。
+
+2×2 消融（01/03/07 × 两档，默认 GOP）：
+
+- `slow` 影响 ≤0.05 dB（01 @2% 甚至 −0.155 dB）
+- `AQ2` 依赖内容：01 +0.02~+0.03 dB，03 ≈ −0.01 dB，07（高细节）**−0.18~−0.19 dB**
+- 与 `02_Beauty`（低细节）上 `aq-motion` 胜出方向一致
+
+可选 LLM 决策对照（DeepSeek，开发集 12 任务）：
+
+| 组 | 平均 PSNR | 相对规则 | 体积 ±3% |
+|---|---:|---:|---:|
+| 规则 + 候选搜索 | 39.09 dB | — | 12/12 |
+| LLM 一次性 | 38.82 dB | −0.268 dB | 11/12 |
+| LLM 带历史回灌 | 38.86 dB | −0.226 dB | 12/12 |
+
+报告：[report/CS5185_Project_Report_v2.docx](report/CS5185_Project_Report_v2.docx)、
+补充实验：[report/CS5185_Experiments_Addendum.docx](report/CS5185_Experiments_Addendum.docx)、
+幻灯片：[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。
 
 ```powershell
-python -m scripts.summarize       # 基线表 + PSNR 图
-python -m scripts.compare         # 自适应 vs 基线
-python -m scripts.export_frames   # 代表帧对比（reports/frames/，不入库）
-python scripts/make_report.py     # 生成 docx/pptx（需 python-docx / python-pptx）
+python -m scripts.summarize              # 基线表 + PSNR 图
+python -m scripts.compare                # 自适应 vs 基线
+python -m scripts.compare_baselines      # 默认 GOP vs GOP60 vs 自适应
+python -m scripts.make_param_table       # 逐视频决策表
+python -m scripts.ablation_ds            # 2×2 消融（01/03/07）
+python -m scripts.make_subjective_kit    # 主观比较三联图 + 打分页
+python -m scripts.export_frames          # 代表帧对比
+```
+
+LLM 对照（可选，需要 API key）：
+
+```powershell
+$env:LLM_API_KEY  = "..."
+$env:LLM_BASE_URL = "https://api.deepseek.com"
+$env:LLM_MODEL    = "deepseek-chat"
+python -m src.pipeline --split dev --ratios 0.05 0.02 --policy llm
 ```
 
 ## 数据划分

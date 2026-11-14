@@ -4,6 +4,9 @@ data/*
 out/
 reports/frames/
 reports/*.mp4
+models/
+reports/subjective/*.png
+reports/subjective/*_tmp/
 
 # python
 .venv/
@@ -31,3 +34,6 @@ tools/
 
 # keep our own slides
 !report/*.pptx
+
+# temporary run logs
+logs/_*.txt

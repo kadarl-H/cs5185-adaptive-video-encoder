@@ -51,14 +51,19 @@ def choose(feature_summary: dict, ratio: float) -> dict:
     return plan
 
 
-def baseline_plan(ratio: float) -> dict:
-    """Unified baseline: fixed preset, default GOP, no content-dependent tuning."""
+def baseline_plan(ratio: float, keyint: int | None = None) -> dict:
+    """Unified baseline: fixed preset, no content-dependent tuning.
+
+    ``keyint=None`` keeps x264's default GOP; a number pins ``-g`` so the
+    baseline can be compared with the appendix example (g=60).
+    """
+    gop = "默认 GOP" if keyint is None else f"GOP={keyint}"
     return {
         "name": "baseline",
         "preset": "medium",
         "x264_params": {},
-        "keyint": None,
-        "reason": ["统一基线：preset=medium，默认 GOP，无内容相关调整"],
+        "keyint": keyint,
+        "reason": [f"统一基线：preset=medium，{gop}，无内容相关调整"],
     }
 
 

@@ -1,0 +1,1 @@
+{"attempt": 0, "kbps": 5072, "output": "C:\\Users\\54028\\Documents\\deepseek-harness\\default-workspace\\cs5185-adaptive-video-encoder\\out\\03_Bosphorus\\baseline_gop60_5%pct\\03_Bosphorus_5pct_a0.mp4", "actual_bytes": 3141304, "actual_kbps": 5026.1, "rel_error": 0.0289, "decode_ok": true, "encode_time_s": 2.22, "status": "ok", "candidate": "baseline"}

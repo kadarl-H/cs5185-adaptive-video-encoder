@@ -72,6 +72,7 @@ def encode_to_budget(
     extra_args: list[str] | None = None,
     max_attempts: int = config.MAX_ATTEMPTS,
     tolerance: float = config.SIZE_TOLERANCE,
+    initial_kbps: int | None = None,
 ) -> tuple[dict | None, list[dict]]:
     """Try up to *max_attempts* encodes, keeping every candidate on disk.
 
@@ -82,6 +83,8 @@ def encode_to_budget(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     bps = config.OVERHEAD * 8.0 * target_bytes / duration_s
+    if initial_kbps:
+        bps = float(initial_kbps) * 1000.0
     attempts: list[dict] = []
     best: dict | None = None
 

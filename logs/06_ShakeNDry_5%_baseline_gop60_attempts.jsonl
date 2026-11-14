@@ -1,0 +1,1 @@
+{"attempt": 0, "kbps": 6458, "output": "C:\\Users\\54028\\Documents\\deepseek-harness\\default-workspace\\cs5185-adaptive-video-encoder\\out\\06_ShakeNDry\\baseline_gop60_5%pct\\06_ShakeNDry_5pct_a0.mp4", "actual_bytes": 2083429, "actual_kbps": 6667.0, "rel_error": 0.0118, "decode_ok": true, "encode_time_s": 1.47, "status": "ok", "candidate": "baseline"}

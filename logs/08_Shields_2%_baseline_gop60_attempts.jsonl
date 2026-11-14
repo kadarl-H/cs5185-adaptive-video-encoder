@@ -1,0 +1,1 @@
+{"attempt": 0, "kbps": 3117, "output": "C:\\Users\\54028\\Documents\\deepseek-harness\\default-workspace\\cs5185-adaptive-video-encoder\\out\\08_Shields\\baseline_gop60_2%pct\\08_Shields_2pct_a0.mp4", "actual_bytes": 1970826, "actual_kbps": 3153.3, "rel_error": 0.0087, "decode_ok": true, "encode_time_s": 2.34, "status": "ok", "candidate": "baseline"}

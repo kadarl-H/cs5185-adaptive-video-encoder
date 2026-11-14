@@ -1,0 +1,1 @@
+{"attempt": 0, "kbps": 2230, "output": "C:\\Users\\54028\\Documents\\deepseek-harness\\default-workspace\\cs5185-adaptive-video-encoder\\out\\05_Jockey\\baseline_2%pct\\05_Jockey_2pct_a0.mp4", "actual_bytes": 1417649, "actual_kbps": 2268.2, "rel_error": 0.0031, "decode_ok": true, "encode_time_s": 1.9, "status": "ok", "candidate": "baseline"}
