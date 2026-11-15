@@ -120,6 +120,19 @@ def main():
         "feature-to-parameter mapping are."
     )
 
+    doc.add_heading("9.6 Expanded candidate pool", level=2)
+    doc.add_paragraph(
+        "The original controller only ever compared three plans, which caps what any better feature "
+        "can achieve. Expanding to five plans (medium, veryslow, a formula plan with dynamic GOP and "
+        "AQ, an AQ2/0.8 contrast plan, and psy-rd or deblock) gives +0.056 dB over the baseline and "
+        "+0.030 dB over the rule controller on the 12 development tasks, and +0.106 / +0.064 dB on the "
+        "8 held-out tasks. Across all 20 tasks the gain over the rule controller is about +0.044 dB, "
+        "with all outputs inside the 3% size band. The AQ2/0.8 plan wins 10 of 20 tasks, the most of "
+        "any single candidate. Because five candidates are compared by maximum PSNR, part of the gain "
+        "is selection bias; the test-set result is a single run and should be read as a small, "
+        "consistent improvement rather than a large effect."
+    )
+
     doc.save(DST)
     print("written", DST)
 

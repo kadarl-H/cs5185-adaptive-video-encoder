@@ -131,6 +131,18 @@ GOP60 在 5 秒片段上比默认 GOP 低 0.135 dB（多出约 2 个 I 帧），
 - 与帧差秩相关 0.77，分类结果几乎相同（01/04 低运动，其余高运动）
 - 结论：更换运动估计器不改变决策，瓶颈在候选设计与特征→参数映射
 
+扩展候选池（5 个候选：medium / veryslow / 公式 / aq-contrast / psy 或 deblock）：
+
+| 数据 | 相对基线 | 相对规则组 |
+|---|---:|---:|
+| 开发集 12 任务 | +0.056 dB | +0.030 dB |
+| 测试集 8 任务 | +0.106 dB | +0.064 dB |
+| 合计 20 任务 | +0.078 dB | +0.044 dB |
+
+- `aq-contrast`（medium + AQ2 + aq-strength 0.8）在 20 个任务中胜出 9 次
+- 体积全部在 ±3% 内
+- 注意：5 候选取 PSNR 最大值有轻微选择偏差，测试集只跑一次
+
 报告：[report/CS5185_Project_Report_v2.docx](report/CS5185_Project_Report_v2.docx)、
 补充实验：[report/CS5185_Experiments_Addendum.docx](report/CS5185_Experiments_Addendum.docx)、
 幻灯片：[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。

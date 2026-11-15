@@ -286,6 +286,60 @@ def main():
             "结合 CNN 实验可以确认：瓶颈不在特征提取，而在候选设计与“特征→参数”的映射。"
         )
 
+    # 8.2 expanded pool
+    doc.add_heading("8.2 扩展候选池（5 个候选）", level=2)
+    doc.add_paragraph(
+        "针对“3 个固定套餐锁死上限”的问题，把候选扩到 5 个，并让其中两个由特征动态生成："
+        "公式方案 g=max(60,min(250,250−6×diff))、低细节用 aq-mode=2/aq-strength=0.8、"
+        "高细节用 aq-mode=1/aq-strength=1.0；另外加入 aq-contrast（AQ2/0.8）与 "
+        "psy-detail（psy-rd=1.0:0.0）或 deblock-soft（deblock=1:1），仍由 PSNR 在预算内选优。"
+    )
+    exp_rows = []
+    for fname in ("expanded_results.csv", "expanded_test_results.csv"):
+        path = LOGS / fname
+        if path.exists():
+            with path.open(encoding="utf-8-sig") as fh:
+                exp_rows.extend(list(csv.DictReader(fh)))
+    if exp_rows:
+        base_all = {(r["video_id"], r["ratio"]): r for r in load("baseline.csv") if r["mode"] == "baseline"}
+        rule_all = {(r["video_id"], r["ratio"]): r for r in load("results.csv") if r["mode"] == "adaptive"}
+        rows = []
+        dev_b, dev_r, test_b, test_r = [], [], [], []
+        for r in exp_rows:
+            key = (r["video_id"], r["ratio"])
+            b = float(base_all[key]["psnr_y_db"])
+            ru = float(rule_all[key]["psnr_y_db"])
+            e = float(r["psnr_y_db"])
+            target = dev_b if r["video_id"] in ("01_FourPeople", "02_Beauty", "03_Bosphorus",
+                                                "04_HoneyBee", "07_Mobcal", "08_Shields") else test_b
+            target_r = dev_r if target is dev_b else test_r
+            target.append(e - b)
+            target_r.append(e - ru)
+            rows.append([r["video_id"], r["ratio"], f"{b:.3f}", f"{ru:.3f}", f"{e:.3f}",
+                         f"{e-ru:+.3f}", r["candidate"]])
+        table(doc, ["视频", "档", "基线", "规则", "5 候选", "5候选−规则", "胜者"], rows,
+              widths=[1.35, 0.42, 0.72, 0.72, 0.8, 0.95, 1.35])
+        parts = []
+        if dev_b:
+            parts.append(
+                f"开发集：相对基线 {sum(dev_b)/len(dev_b):+.4f} dB，"
+                f"相对规则 {sum(dev_r)/len(dev_r):+.4f} dB。")
+        if test_b:
+            parts.append(
+                f"测试集：相对基线 {sum(test_b)/len(test_b):+.4f} dB，"
+                f"相对规则 {sum(test_r)/len(test_r):+.4f} dB。")
+        combined = dev_r + test_r
+        if combined:
+            parts.append(f"共 {len(combined)} 个任务，相对规则 {sum(combined)/len(combined):+.4f} dB。")
+        from collections import Counter
+        dist = "、".join(f"{name} {count} 次" for name, count in Counter(r[6] for r in rows).most_common())
+        parts.append(
+            f"胜者分布：{dist}。所有任务体积都在 ±3% 内。"
+            "需要注意：5 个候选取 PSNR 最大值会带来轻微的选择偏差，测试集只跑了一次，"
+            "因此 +0.05~+0.07 dB 应视为“小幅但方向一致”，而不是稳定的大幅提升。"
+        )
+        doc.add_paragraph("".join(parts))
+
     # 9 reproduce
     doc.add_heading("9. 复现命令", level=2)
     for cmd in [
@@ -299,6 +353,8 @@ def main():
         r"python -m scripts.nn_pipeline   # NN 特征驱动的自适应",
         r"python -m scripts.flow_features # Farneback 光流特征",
         r"python -m scripts.flow_pipeline # 光流特征驱动的自适应",
+        r"python -m scripts.expanded_pipeline            # 5 候选（开发集）",
+        r"python -m scripts.expanded_pipeline --split test  # 5 候选（测试集）",
     ]:
         p = doc.add_paragraph(cmd)
         p.runs[0].font.name = "Consolas"
