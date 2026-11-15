@@ -145,6 +145,15 @@ def main():
         "for PSNR to arbitrate rather than as a universal replacement."
     )
 
+    doc.add_heading("9.8 Six candidates including tune animation", level=2)
+    doc.add_paragraph(
+        "Adding -tune animation to the five-plan pool makes it the winner in 18 of 20 tasks; the "
+        "pool then gives +0.337 / +0.311 dB (dev) and +0.392 / +0.350 dB (test) against baseline and "
+        "rule respectively, i.e. +0.359 / +0.327 dB over all 20 tasks. This is essentially the same "
+        "as using tune animation alone, so the gain comes from the linked parameter bundle rather "
+        "than from having more candidates. All outputs stay inside the 3% size band."
+    )
+
     doc.save(DST)
     print("written", DST)
 

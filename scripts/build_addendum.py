@@ -295,7 +295,7 @@ def main():
         "psy-detail（psy-rd=1.0:0.0）或 deblock-soft（deblock=1:1），仍由 PSNR 在预算内选优。"
     )
     exp_rows = []
-    for fname in ("expanded_results.csv", "expanded_test_results.csv"):
+    for fname in ("expanded5_results.csv", "expanded5_test_results.csv"):
         path = LOGS / fname
         if path.exists():
             with path.open(encoding="utf-8-sig") as fh:
@@ -386,6 +386,41 @@ def main():
             "其组合效应远大于逐个调参。代价：09_Parkrun 的 MS-SSIM 略降（PSNR 与结构相似性分歧），"
             "10_Stockholm @2% 体积误差 3.11%，略超 3% 带。"
             "因此它应作为候选之一交给 PSNR 裁决，而不是无条件替换所有方案。"
+        )
+
+    # 8.4 six candidates
+    doc.add_heading("8.4 六候选（加入 tune animation）", level=2)
+    six_rows = []
+    for fname in ("expanded_results.csv", "expanded_test_results.csv"):
+        path = LOGS / fname
+        if path.exists():
+            with path.open(encoding="utf-8-sig") as fh:
+                six_rows.extend(list(csv.DictReader(fh)))
+    if six_rows:
+        base_all = {(r["video_id"], r["ratio"]): float(r["psnr_y_db"])
+                    for r in load("baseline.csv") if r["mode"] == "baseline"}
+        rule_all = {(r["video_id"], r["ratio"]): float(r["psnr_y_db"])
+                    for r in load("results.csv") if r["mode"] == "adaptive"}
+        dev = [(float(r["psnr_y_db"]) - base_all[(r["video_id"], r["ratio"])],
+                float(r["psnr_y_db"]) - rule_all[(r["video_id"], r["ratio"])])
+               for r in six_rows if r["video_id"][:2] in ("01", "02", "03", "04", "07", "08")]
+        test = [(float(r["psnr_y_db"]) - base_all[(r["video_id"], r["ratio"])],
+                 float(r["psnr_y_db"]) - rule_all[(r["video_id"], r["ratio"])])
+                for r in six_rows if r["video_id"][:2] in ("05", "06", "09", "10")]
+        table(doc, ["数据", "任务数", "相对基线", "相对规则"], [
+            ["开发集", len(dev), f"{sum(x[0] for x in dev)/len(dev):+.4f}", f"{sum(x[1] for x in dev)/len(dev):+.4f}"],
+            ["测试集", len(test), f"{sum(x[0] for x in test)/len(test):+.4f}", f"{sum(x[1] for x in test)/len(test):+.4f}"],
+            ["合计", len(dev) + len(test),
+             f"{sum(x[0] for x in dev+test)/(len(dev)+len(test)):+.4f}",
+             f"{sum(x[1] for x in dev+test)/(len(dev)+len(test)):+.4f}"],
+        ], widths=[1.0, 0.9, 1.3, 1.3])
+        from collections import Counter
+        dist = "、".join(f"{k} {v} 次" for k, v in Counter(r["candidate"] for r in six_rows).most_common())
+        doc.add_paragraph(
+            f"胜者分布：{dist}。加入 tune 后，绝大多数任务直接选中 tune-animation，"
+            "六候选相对五候选的提升与 tune 单独使用几乎相同；"
+            "这说明在本数据集上，收益主要来自 tune 这一组联动参数，而不是“更多候选”本身。"
+            "所有输出体积都在 ±3% 内。"
         )
 
     # 9 reproduce

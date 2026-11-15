@@ -47,6 +47,9 @@ def plans(feat: tuple[float, float]) -> list[dict]:
          "reason": ["对照：medium 默认"]},
         {"name": "veryslow-default", "preset": "veryslow", "x264_params": {}, "keyint": None,
          "reason": ["对照：veryslow"]},
+        {"name": "tune-animation", "preset": "medium", "x264_params": {}, "keyint": None,
+         "extra_args": ["-tune", "animation"],
+         "reason": ["tune animation 组合（refs/bf/aq/deblock/psy-rd）"]},
     ]
     formula = {
         "name": "formula", "preset": "medium", "keyint": g,
