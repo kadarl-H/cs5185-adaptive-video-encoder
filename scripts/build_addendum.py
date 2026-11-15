@@ -210,8 +210,50 @@ def main():
         "本报告如实标注：当前版本中边缘特征不参与最终参数决策。"
     )
 
-    # 8 reproduce
-    doc.add_heading("8. 复现命令", level=2)
+    # 8 NN
+    doc.add_heading("8. 神经网络内容分析（MobileNetV2）", level=2)
+    doc.add_paragraph(
+        "为回答“用深度学习做内容分析会不会更好”，用预训练 MobileNetV2（ONNX，ImageNet 权重）"
+        "对每个视频均匀抽取 8 帧，取 1280 维 embedding，计算相邻帧余弦漂移 nn_drift 与帧间离散度 "
+        "nn_spread，并用与规则组相同的候选集和 PSNR 搜索跑 12 个开发任务。"
+        "阈值按开发集中位数取 nn_drift 0.12、nn_spread 0.012；这是事后校准，不是独立验证。"
+    )
+    nn_path = LOGS / "nn_results.csv"
+    if nn_path.exists():
+        with nn_path.open(encoding="utf-8-sig") as fh:
+            nn_rows = {(r["video_id"], r["ratio"]): r for r in csv.DictReader(fh)}
+        base_map = {(r["video_id"], r["ratio"]): r for r in load("baseline.csv") if r["mode"] == "baseline"}
+        rule_map = {(r["video_id"], r["ratio"]): r for r in load("results.csv") if r["mode"] == "adaptive"}
+        rows = []
+        d_base, d_rule = [], []
+        for vid in ("01_FourPeople", "02_Beauty", "03_Bosphorus", "04_HoneyBee", "07_Mobcal", "08_Shields"):
+            for ratio in ("5%", "2%"):
+                n = float(nn_rows[(vid, ratio)]["psnr_y_db"])
+                b = float(base_map[(vid, ratio)]["psnr_y_db"])
+                r = float(rule_map[(vid, ratio)]["psnr_y_db"])
+                d_base.append(n - b)
+                d_rule.append(n - r)
+                rows.append([vid, ratio, f"{b:.3f}", f"{r:.3f}", f"{n:.3f}",
+                             f"{n-r:+.3f}", nn_rows[(vid, ratio)]["candidate"]])
+        table(doc, ["视频", "档", "基线", "规则", "NN", "NN−规则", "NN 胜者"], rows,
+              widths=[1.4, 0.45, 0.8, 0.8, 0.8, 0.85, 1.3])
+        doc.add_paragraph(
+            f"NN 组相对基线 {sum(d_base)/len(d_base):+.4f} dB（{sum(x>0 for x in d_base)}/12 胜），"
+            f"相对规则组 {sum(d_rule)/len(d_rule):+.4f} dB（{sum(x>0 for x in d_rule)}/12 胜）。"
+            "两者在统计上基本持平：NN 略低于规则，但仍略高于统一基线。"
+        )
+    doc.add_paragraph(
+        "特征层面的检查更能说明问题：nn_drift 与手工帧差的 Spearman 相关只有 0.27，"
+        "中位数分组一致率 0.60；nn_spread 与边缘占比的相关为 −0.10。"
+        "原因是 MobileNet 的 embedding 描述的是语义/外观，而不是像素运动："
+        "02_Beauty 的漂移 0.105 被分到“低运动”，因此丢掉了 aq-motion 候选，"
+        "而它恰好是规则组唯一一次内容候选胜出（+0.087 dB）。"
+        "结论：在本数据集上，预训练 CNN 特征没有带来质量收益，却引入 14 MB 模型与额外推理依赖；"
+        "因此最终系统仍用手工帧差/边缘，NN 结果作为对照实验保留。"
+    )
+
+    # 9 reproduce
+    doc.add_heading("9. 复现命令", level=2)
     for cmd in [
         r"python -m src.pipeline --split dev --ratios 0.05 0.02",
         r"python -m src.pipeline --split test --ratios 0.05 0.02 --baseline",
@@ -219,12 +261,14 @@ def main():
         r"python -m scripts.make_param_table",
         r"python -m scripts.ablation_ds",
         r"python -m scripts.make_subjective_kit",
+        r"python -m scripts.nn_features   # MobileNetV2 特征",
+        r"python -m scripts.nn_pipeline   # NN 特征驱动的自适应",
     ]:
         p = doc.add_paragraph(cmd)
         p.runs[0].font.name = "Consolas"
 
-    # 9 contributions
-    doc.add_heading("9. 成员贡献（待填写）", level=2)
+    # 10 contributions
+    doc.add_heading("10. 成员贡献（待填写）", level=2)
     table(doc, ["成员", "负责内容", "占比"], [
         ["（姓名/学号）", "内容特征、参数决策、编码流水线", ""],
         ["（姓名/学号）", "评测脚本、PSNR/MS-SSIM、图表", ""],

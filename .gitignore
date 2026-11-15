@@ -37,3 +37,6 @@ tools/
 
 # temporary run logs
 logs/_*.txt
+
+# local render previews
+.dsh-office-*/

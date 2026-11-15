@@ -98,6 +98,18 @@ def main():
         "(aq-motion on 02_Beauty @5%), which explains the modest overall gain."
     )
 
+    doc.add_heading("9.4 Neural-network content features", level=2)
+    doc.add_paragraph(
+        "Replacing the handcrafted motion signal with MobileNetV2 embedding drift (8 sampled "
+        "frames per clip, ONNX, ImageNet weights) gives +0.019 dB over the baseline (7/12) but "
+        "-0.008 dB against the rule-based controller (4/12). The CNN drift correlates only 0.27 "
+        "with the frame difference (Spearman), so the two signals measure different things. "
+        "02_Beauty (drift 0.105) falls below the motion threshold and loses the aq-motion "
+        "candidate that produced the rule-based winner, which explains most of the gap. "
+        "The neural features therefore add a 14 MB model and inference cost without a quality "
+        "gain; they are kept as a controlled experiment, not as part of the final system."
+    )
+
     doc.save(DST)
     print("written", DST)
 

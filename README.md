@@ -118,6 +118,13 @@ GOP60 在 5 秒片段上比默认 GOP 低 0.135 dB（多出约 2 个 I 帧），
 | LLM 一次性 | 38.82 dB | −0.268 dB | 11/12 |
 | LLM 带历史回灌 | 38.86 dB | −0.226 dB | 12/12 |
 
+预训练神经网络对照（MobileNetV2 ONNX，8 帧/video，embedding drift/spread 替代帧差）：
+
+- 相对基线 **+0.019 dB（7/12）**，相对规则组 **−0.008 dB（4/12）**
+- 与手工帧差的 Spearman 相关只有 **0.27**：语义特征不等于像素运动
+- `02_Beauty` 漂移 0.105 被判为“低运动”，丢掉 `aq-motion` 候选，损失约 0.087 dB
+- 结论：无质量收益，保留为对照实验；最终系统仍用手工帧差/边缘
+
 报告：[report/CS5185_Project_Report_v2.docx](report/CS5185_Project_Report_v2.docx)、
 补充实验：[report/CS5185_Experiments_Addendum.docx](report/CS5185_Experiments_Addendum.docx)、
 幻灯片：[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。
@@ -129,6 +136,8 @@ python -m scripts.compare_baselines      # 默认 GOP vs GOP60 vs 自适应
 python -m scripts.make_param_table       # 逐视频决策表
 python -m scripts.ablation_ds            # 2×2 消融（01/03/07）
 python -m scripts.make_subjective_kit    # 主观比较三联图 + 打分页
+python -m scripts.nn_features            # MobileNetV2 特征
+python -m scripts.nn_pipeline            # NN 特征驱动的自适应
 python -m scripts.export_frames          # 代表帧对比
 ```
 
