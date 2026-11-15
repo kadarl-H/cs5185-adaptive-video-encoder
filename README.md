@@ -143,6 +143,21 @@ GOP60 在 5 秒片段上比默认 GOP 低 0.135 dB（多出约 2 个 I 帧），
 - 体积全部在 ±3% 内
 - 注意：5 候选取 PSNR 最大值有轻微选择偏差，测试集只跑一次
 
+参数筛选（01/07 × 两档，单参数逐个改）：
+
+| 变体 | 平均 ΔPSNR |
+|---|---:|
+| subq=9 | −0.094 |
+| me=umh | +0.002 |
+| rc-lookahead=40 | −0.010 |
+| refs=5 | +0.036 |
+| bf=4 | −0.003 |
+| mbtree=0 | **−0.625** |
+| tune=film | −0.170 |
+| **tune=animation** | **+0.353** |
+
+单独用 `medium + -tune animation` 在 20 个任务上平均 **+0.366 dB，20/20 全胜**（相对规则组 +0.33）。tune 是一组联动参数（refs/bf/AQ/deblock/psy-rd），组合效应远大于逐项调参；代价是 09_Parkrun 的 MS-SSIM 略降、10_Stockholm @2% 体积误差 3.11%。
+
 报告：[report/CS5185_Project_Report_v2.docx](report/CS5185_Project_Report_v2.docx)、
 补充实验：[report/CS5185_Experiments_Addendum.docx](report/CS5185_Experiments_Addendum.docx)、
 幻灯片：[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。

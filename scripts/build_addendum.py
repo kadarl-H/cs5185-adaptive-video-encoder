@@ -340,6 +340,54 @@ def main():
         )
         doc.add_paragraph("".join(parts))
 
+    # 8.3 screening + tune
+    doc.add_heading("8.3 其他参数筛选与 tune 组合", level=2)
+    screen_path = LOGS / "param_screen.csv"
+    if screen_path.exists():
+        with screen_path.open(encoding="utf-8-sig") as fh:
+            screen = list(csv.DictReader(fh))
+        base = {(r["video"], r["ratio"]): float(r["psnr"]) for r in screen if r["variant"] == "base"}
+        variants = sorted({r["variant"] for r in screen if r["variant"] != "base"})
+        rows = []
+        for v in variants:
+            ds = [float(r["psnr"]) - base[(r["video"], r["ratio"])]
+                  for r in screen if r["variant"] == v]
+            rows.append([v, f"{sum(ds)/len(ds):+.3f}", f"{min(ds):+.3f}", f"{max(ds):+.3f}"])
+        table(doc, ["变体", "平均 ΔPSNR", "最小", "最大"], rows,
+              widths=[1.6, 1.1, 0.9, 0.9])
+        doc.add_paragraph(
+            "单参数筛选（01/07 × 两档，共 4 个任务）：subq=9、me=umh、rc-lookahead=40、"
+            "refs=5、bf=4、mbtree=0、tune=film、tune=animation。"
+            "结果是大多数参数在 ±0.05 dB 内，mbtree 关闭损失 0.6 dB，subq=9 反而 −0.09 dB；"
+            "唯一大幅正向的是 tune=animation（约 +0.35 dB）。"
+        )
+    tune_rows = []
+    for fname in ("tune_anim_dev.csv", "tune_anim_test.csv"):
+        path = LOGS / fname
+        if path.exists():
+            with path.open(encoding="utf-8-sig") as fh:
+                tune_rows.extend(list(csv.DictReader(fh)))
+    if tune_rows:
+        base_all = {(r["video_id"], r["ratio"]): float(r["psnr_y_db"])
+                    for r in load("baseline.csv") if r["mode"] == "baseline"}
+        rows = []
+        for r in tune_rows:
+            key = (r["video"], r["ratio"])
+            rows.append([r["video"], r["ratio"], f"{base_all[key]:.3f}",
+                         f"{float(r['psnr']):.3f}", f"{float(r['psnr'])-base_all[key]:+.3f}",
+                         r["rel_error"]])
+        table(doc, ["视频", "档", "基线", "tune animation", "ΔPSNR", "体积误差"], rows,
+              widths=[1.35, 0.45, 0.75, 1.1, 0.75, 0.8])
+        ds = [float(r["psnr"]) - base_all[(r["video"], r["ratio"])] for r in tune_rows]
+        doc.add_paragraph(
+            f"单独使用 `-preset medium -tune animation`（不换 AQ、不换 GOP）在 20 个任务上"
+            f"平均 {sum(ds)/len(ds):+.3f} dB，20/20 全部高于基线；相对规则组约 +0.33 dB。"
+            "原因是 tune 不是单个参数，而是一组联动设置（参考帧、B 帧、AQ、deblock、psy-rd），"
+            "其组合效应远大于逐个调参。代价：09_Parkrun 的 MS-SSIM 略降（PSNR 与结构相似性分歧），"
+            "10_Stockholm @2% 体积误差 3.11%，略超 3% 带。"
+            "因此它应作为候选之一交给 PSNR 裁决，而不是无条件替换所有方案。"
+        )
+
     # 9 reproduce
     doc.add_heading("9. 复现命令", level=2)
     for cmd in [

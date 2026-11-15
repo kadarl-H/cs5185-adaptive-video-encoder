@@ -133,6 +133,18 @@ def main():
         "consistent improvement rather than a large effect."
     )
 
+    doc.add_heading("9.7 Screening the remaining knobs", level=2)
+    doc.add_paragraph(
+        "A one-at-a-time screen (subq, me, rc-lookahead, refs, bf, mbtree, tune) on 01/07 x 2 "
+        "budgets shows that most knobs move PSNR by at most 0.05 dB, and several move it the wrong "
+        "way (subq=9 -0.09 dB, mbtree off -0.63 dB, tune=film -0.17 dB). The exception is "
+        "-tune animation: as a bundle of linked settings it gives +0.37 dB on average over all 20 "
+        "tasks (20/20 above baseline, about +0.33 dB over the rule controller), at the cost of a "
+        "slightly lower MS-SSIM on 09_Parkrun and one 3.11% size miss. Parameter interactions "
+        "therefore dominate single-knob tuning; the bundle is best treated as one more candidate "
+        "for PSNR to arbitrate rather than as a universal replacement."
+    )
+
     doc.save(DST)
     print("written", DST)
 
