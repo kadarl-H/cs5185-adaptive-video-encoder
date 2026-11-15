@@ -252,6 +252,40 @@ def main():
         "因此最终系统仍用手工帧差/边缘，NN 结果作为对照实验保留。"
     )
 
+    # 8.1 flow
+    doc.add_heading("8.1 光流特征（Farneback）", level=2)
+    doc.add_paragraph(
+        "为区分“模型方向不对”与“运动估计不够准”，再用非神经的 Farneback 稠密光流替代帧差："
+        "每帧半分辨率（640×360）计算平均流幅值 flow_mean，阈值 1.0 像素/帧决定 "
+        "aq-motion / long-gop 候选，其余与规则组完全一致。"
+    )
+    flow_path = LOGS / "flow_results.csv"
+    if flow_path.exists():
+        with flow_path.open(encoding="utf-8-sig") as fh:
+            flow_rows = {(r["video_id"], r["ratio"]): r for r in csv.DictReader(fh)}
+        base_map = {(r["video_id"], r["ratio"]): r for r in load("baseline.csv") if r["mode"] == "baseline"}
+        rule_map = {(r["video_id"], r["ratio"]): r for r in load("results.csv") if r["mode"] == "adaptive"}
+        rows = []
+        d_base, d_rule = [], []
+        for vid in ("01_FourPeople", "02_Beauty", "03_Bosphorus", "04_HoneyBee", "07_Mobcal", "08_Shields"):
+            for ratio in ("5%", "2%"):
+                f = float(flow_rows[(vid, ratio)]["psnr_y_db"])
+                b = float(base_map[(vid, ratio)]["psnr_y_db"])
+                r = float(rule_map[(vid, ratio)]["psnr_y_db"])
+                d_base.append(f - b)
+                d_rule.append(f - r)
+                rows.append([vid, ratio, f"{b:.3f}", f"{r:.3f}", f"{f:.3f}",
+                             f"{f-r:+.3f}", flow_rows[(vid, ratio)]["candidate"]])
+        table(doc, ["视频", "档", "基线", "规则", "光流", "光流−规则", "光流胜者"], rows,
+              widths=[1.4, 0.45, 0.8, 0.8, 0.8, 0.95, 1.3])
+        doc.add_paragraph(
+            f"光流组相对基线 {sum(d_base)/len(d_base):+.4f} dB（{sum(x>0 for x in d_base)}/12 胜），"
+            f"相对规则组 {sum(d_rule)/len(d_rule):+.4f} dB（{sum(x>0 for x in d_rule)}/12 胜）。"
+            "差异在噪声量级，说明更换运动估计器并没有改变决策；"
+            "光流与帧差的秩相关为 0.77，分类结果几乎相同（01/04 低运动，其余高运动）。"
+            "结合 CNN 实验可以确认：瓶颈不在特征提取，而在候选设计与“特征→参数”的映射。"
+        )
+
     # 9 reproduce
     doc.add_heading("9. 复现命令", level=2)
     for cmd in [
@@ -263,6 +297,8 @@ def main():
         r"python -m scripts.make_subjective_kit",
         r"python -m scripts.nn_features   # MobileNetV2 特征",
         r"python -m scripts.nn_pipeline   # NN 特征驱动的自适应",
+        r"python -m scripts.flow_features # Farneback 光流特征",
+        r"python -m scripts.flow_pipeline # 光流特征驱动的自适应",
     ]:
         p = doc.add_paragraph(cmd)
         p.runs[0].font.name = "Consolas"

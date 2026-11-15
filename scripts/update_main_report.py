@@ -110,6 +110,16 @@ def main():
         "gain; they are kept as a controlled experiment, not as part of the final system."
     )
 
+    doc.add_heading("9.5 Optical-flow motion features", level=2)
+    doc.add_paragraph(
+        "A Farneback dense-flow variant (half resolution, mean magnitude, threshold 1.0 px/frame) "
+        "reproduces the handcrafted classification almost exactly: +0.028 dB over the baseline "
+        "(9/12) and +0.002 dB against the rule-based controller (7/12), i.e. a tie. Its rank "
+        "correlation with the frame difference is 0.77. Together with the CNN result this shows "
+        "that the choice of motion estimator is not the bottleneck; the candidate design and the "
+        "feature-to-parameter mapping are."
+    )
+
     doc.save(DST)
     print("written", DST)
 

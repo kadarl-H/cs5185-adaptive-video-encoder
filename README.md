@@ -125,6 +125,12 @@ GOP60 在 5 秒片段上比默认 GOP 低 0.135 dB（多出约 2 个 I 帧），
 - `02_Beauty` 漂移 0.105 被判为“低运动”，丢掉 `aq-motion` 候选，损失约 0.087 dB
 - 结论：无质量收益，保留为对照实验；最终系统仍用手工帧差/边缘
 
+光流对照（Farneback，半分辨率，阈值 1.0 px/frame）：
+
+- 相对基线 **+0.028 dB（9/12）**，相对规则组 **+0.002 dB（6/12）**
+- 与帧差秩相关 0.77，分类结果几乎相同（01/04 低运动，其余高运动）
+- 结论：更换运动估计器不改变决策，瓶颈在候选设计与特征→参数映射
+
 报告：[report/CS5185_Project_Report_v2.docx](report/CS5185_Project_Report_v2.docx)、
 补充实验：[report/CS5185_Experiments_Addendum.docx](report/CS5185_Experiments_Addendum.docx)、
 幻灯片：[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。
@@ -138,6 +144,8 @@ python -m scripts.ablation_ds            # 2×2 消融（01/03/07）
 python -m scripts.make_subjective_kit    # 主观比较三联图 + 打分页
 python -m scripts.nn_features            # MobileNetV2 特征
 python -m scripts.nn_pipeline            # NN 特征驱动的自适应
+python -m scripts.flow_features          # Farneback 光流特征
+python -m scripts.flow_pipeline          # 光流特征驱动的自适应
 python -m scripts.export_frames          # 代表帧对比
 ```
 
