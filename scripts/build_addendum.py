@@ -423,6 +423,39 @@ def main():
             "所有输出体积都在 ±3% 内。"
         )
 
+    # 8.5 tune overrides
+    doc.add_heading("8.5 在 tune 之上做内容覆盖", level=2)
+    override = []
+    for fname in ("tune_override_dev.csv", "tune_override_test.csv"):
+        path = LOGS / fname
+        if path.exists():
+            with path.open(encoding="utf-8-sig") as fh:
+                override.extend(list(csv.DictReader(fh)))
+    tune_ref = {}
+    for fname in ("tune_anim_dev.csv", "tune_anim_test.csv"):
+        path = LOGS / fname
+        if path.exists():
+            with path.open(encoding="utf-8-sig") as fh:
+                for r in csv.DictReader(fh):
+                    tune_ref[(r["video"], r["ratio"])] = float(r["psnr"])
+    if override and tune_ref:
+        ds = [float(r["psnr"]) - tune_ref[(r["video"], r["ratio"])] for r in override]
+        from collections import Counter
+        counts = Counter(r["variant"] for r in override)
+        rows = [[v, counts[v], f"{sum(float(r['psnr']) - tune_ref[(r['video'], r['ratio'])] for r in override if r['variant'] == v)/counts[v]:+.4f}"]
+                for v in ("A_tune", "B_tune_g", "C_tune_aq", "D_tune_g_aq") if counts[v]]
+        table(doc, ["变体", "被选中次数", "相对纯 tune 平均 ΔPSNR"], rows,
+              widths=[1.5, 1.2, 2.0])
+        doc.add_paragraph(
+            "A=纯 tune；B=tune + 由帧差算出的 GOP；C=tune + 高细节改 AQ1；D=两者都改。"
+            f"20 个任务中，内容覆盖改变了 {sum(1 for r in override if r['variant'] != 'A_tune')} 次选择"
+            f"（A 被选 {counts['A_tune']} 次），但相对纯 tune 平均 {sum(ds)/len(ds):+.4f} dB。"
+            "也就是说：特征确实改变了参数，却没有带来可测的画质提升；"
+            "09_Parkrun @2% 的 D 变体甚至因为“体积合格优先”被选中，PSNR 比纯 tune 低 0.31 dB。"
+            "这条实验提供了“内容分析影响参数选择”的直接证据，同时也说明在该数据集上，"
+            "覆盖 tune 的默认值并不划算。"
+        )
+
     # 9 reproduce
     doc.add_heading("9. 复现命令", level=2)
     for cmd in [
@@ -438,6 +471,8 @@ def main():
         r"python -m scripts.flow_pipeline # 光流特征驱动的自适应",
         r"python -m scripts.expanded_pipeline            # 5 候选（开发集）",
         r"python -m scripts.expanded_pipeline --split test  # 5 候选（测试集）",
+        r"python -m scripts.tune_override --split dev   # tune + 内容覆盖",
+        r"python -m scripts.tune_override --split test",
     ]:
         p = doc.add_paragraph(cmd)
         p.runs[0].font.name = "Consolas"

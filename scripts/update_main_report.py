@@ -154,6 +154,18 @@ def main():
         "than from having more candidates. All outputs stay inside the 3% size band."
     )
 
+    doc.add_heading("9.9 Content overrides on top of tune", level=2)
+    doc.add_paragraph(
+        "To make the feature-to-parameter link explicit, four variants were compared: pure tune, "
+        "tune + GOP from frame difference, tune + AQ1 for high-edge clips, and both. The features "
+        "changed the selected variant in 11 of 20 tasks, which demonstrates a real decision link, "
+        "but the average PSNR difference against pure tune is about -0.009 dB. One task "
+        "(09_Parkrun @2%) picks the D variant because it is inside the size band and loses 0.31 dB. "
+        "The content analysis therefore does influence the chosen parameters, but overriding the "
+        "tune defaults does not improve quality on this dataset; the honest conclusion is that the "
+        "link exists but has little measurable effect."
+    )
+
     doc.save(DST)
     print("written", DST)
 
