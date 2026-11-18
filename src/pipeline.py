@@ -181,7 +181,7 @@ def run_one(video: Path, ratio: float, attempts: int, do_eval: bool,
                 target_bytes=target,
                 duration_s=float(info["duration_s"]),
                 out_dir=out_dir,
-                extra_args=decision.ffmpeg_args(plan),
+                extra_args=decision.ffmpeg_args(plan) + plan.get("extra_args", []),
                 max_attempts=per_attempt,
                 initial_kbps=initial_kbps,
             )

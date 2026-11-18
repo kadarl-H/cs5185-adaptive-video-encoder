@@ -85,10 +85,13 @@ metadata ──► 预算计算 ──► 内容特征 ──► 参数决策 �
 - 平均 PSNR-Y：5% 档 **39.04 dB**，2% 档 **37.58 dB**
 - 明细：[logs/baseline.csv](logs/baseline.csv)
 
-自适应（候选搜索）对比同一基线：
+自适应（最终版 6 候选：medium / veryslow / tune-animation / formula / aq-contrast / psy 或 deblock）：
 
-- **8/12 胜出，平均 ΔPSNR +0.026 dB**；编码耗时约为基线的 5 倍
-- 明细：[reports/adaptive_vs_baseline.md](reports/adaptive_vs_baseline.md)
+- 开发集 12 任务：相对基线 **+0.337 dB**，相对原 3 候选规则组 **+0.311 dB**
+- 测试集 8 任务：相对基线 **+0.392 dB**，相对原规则组 **+0.350 dB**
+- 合计 20 任务：相对基线 **+0.359 dB**，相对规则组 **+0.327 dB**
+- 胜者：`tune-animation` 19 次，`aq-contrast` 1 次；全部输出在 ±3% 内
+- 明细：[logs/expanded_results.csv](logs/expanded_results.csv)、[logs/expanded_test_results.csv](logs/expanded_test_results.csv)
 
 保留测试集（05/06/09/10 × 两档，已补跑基线）：
 
@@ -158,7 +161,7 @@ GOP60 在 5 秒片段上比默认 GOP 低 0.135 dB（多出约 2 个 I 帧），
 
 单独用 `medium + -tune animation` 在 20 个任务上平均 **+0.366 dB，20/20 全胜**（相对规则组 +0.33）。tune 是一组联动参数（refs/bf/AQ/deblock/psy-rd），组合效应远大于逐项调参；代价是 09_Parkrun 的 MS-SSIM 略降、10_Stockholm @2% 体积误差 3.11%。
 
-报告：[report/CS5185_Project_Report_v2.docx](report/CS5185_Project_Report_v2.docx)、
+报告：[report/CS5185_Project_Report_v3.docx](report/CS5185_Project_Report_v3.docx)、
 补充实验：[report/CS5185_Experiments_Addendum.docx](report/CS5185_Experiments_Addendum.docx)、
 幻灯片：[report/CS5185_Project_Slides.pptx](report/CS5185_Project_Slides.pptx)。
 

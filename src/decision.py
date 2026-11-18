@@ -76,7 +76,10 @@ def adaptive_candidates(feature_summary: dict, ratio: float) -> list[dict]:
     """
     motion = feature_summary.get("diff_mean", 0.0)
     detail = feature_summary.get("edge_mean", 0.0)
-    high_motion = motion >= HIGH_MOTION_DIFF
+    low_detail = detail < 0.12
+    gop = max(60, min(250, round(250 - 6 * motion)))
+    aq_mode = 2 if low_detail else 1
+    aq_str = 0.8 if low_detail else 1.0
 
     candidates = [
         {
@@ -93,23 +96,47 @@ def adaptive_candidates(feature_summary: dict, ratio: float) -> list[dict]:
             "keyint": None,
             "reason": ["候选：preset=veryslow，用编码时间换同码率质量"],
         },
+        {
+            "name": "tune-animation",
+            "preset": "medium",
+            "x264_params": {},
+            "keyint": None,
+            "extra_args": ["-tune", "animation"],
+            "reason": ["候选：-tune animation（refs/bf/AQ/deblock/psy-rd 联动）"],
+        },
+        {
+            "name": "formula",
+            "preset": "medium",
+            "x264_params": {"aq-mode": aq_mode, "aq-strength": aq_str},
+            "keyint": gop,
+            "reason": [f"公式：g=250-6*{motion:.1f}={gop}, aq={aq_mode}/{aq_str}"],
+        },
+        {
+            "name": "aq-contrast",
+            "preset": "medium",
+            "x264_params": {"aq-mode": 2, "aq-strength": 0.8},
+            "keyint": None,
+            "reason": ["AQ2 + 0.8：温和的区域码率重分配"],
+        },
     ]
 
-    if high_motion:
+    if low_detail:
         candidates.append({
-            "name": "aq-motion",
+            "name": "deblock-soft",
             "preset": "medium",
-            "x264_params": {"aq-mode": 2, "aq-strength": 1.0, "refs": 3, "bf": 3},
-            "keyint": 60,
-            "reason": [f"候选：高运动(帧差 {motion:.1f}) → aq-mode=2, refs=3, bf=3, g=60"],
+            "x264_params": {},
+            "keyint": None,
+            "extra_args": ["-deblock", "1:1"],
+            "reason": [f"低细节(edge {detail:.3f}) → deblock 1:1"],
         })
     else:
         candidates.append({
-            "name": "long-gop",
+            "name": "psy-detail",
             "preset": "medium",
-            "x264_params": {"aq-mode": 1, "aq-strength": 1.0, "refs": 5, "bf": 0},
-            "keyint": 120,
-            "reason": [f"候选：低运动(帧差 {motion:.1f}) → 长 GOP(g=120), refs=5, bf=0"],
+            "x264_params": {},
+            "keyint": None,
+            "extra_args": ["-psy-rd", "1.0:0.0"],
+            "reason": [f"高细节(edge {detail:.3f}) → psy-rd 1.0:0.0"],
         })
 
     return candidates
